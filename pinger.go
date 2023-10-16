@@ -12,6 +12,8 @@ import (
 
 func NewPinger() *Pinger {
     pinger := new(Pinger)
+    pinger.SetCount(5)
+    pinger.SetTimeout(5)
     return  pinger
 }
 
@@ -42,7 +44,7 @@ func (p *Pinger) Run(c *gin.Context) {
     for _, addr := range hosts {
         wg.Add(1)
         result := make(chan bool, 1)
-        go pinger(addr, wg, timeout, result)
+        go p.pinger(addr, wg, timeout, result)
         results[addr] = <- result
     }
     wg.Wait()
@@ -62,11 +64,11 @@ func (p *Pinger) doPing(addr string) {
     }
 }
 
-func pinger(addr string, wg *sync.WaitGroup, t time.Duration, result chan bool) {
+func (p *Pinger) pinger(addr string, wg *sync.WaitGroup, t time.Duration, result chan bool) {
 	c := make(chan bool)
 	go func() {
 		defer close(c)
-        doPing(addr)
+        p.doPing(addr)
 	}() 
 	select {
         case <-c:
